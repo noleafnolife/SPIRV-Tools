@@ -56,7 +56,6 @@ class Pipe;
 class ForwardPointer;
 class PipeStorage;
 class NamedBarrier;
-class AccelerationStructureNV;
 
 // Abstract class for a SPIR-V type. It has a bunch of As<sublcass>() methods,
 // which is used as a way to probe the actual <subclass>.
@@ -91,7 +90,6 @@ class Type {
     kForwardPointer,
     kPipeStorage,
     kNamedBarrier,
-    kAccelerationStructureNV,
   };
 
   Type(Kind k) : kind_(k) {}
@@ -172,7 +170,6 @@ class Type {
   DeclareCastMethod(ForwardPointer);
   DeclareCastMethod(PipeStorage);
   DeclareCastMethod(NamedBarrier);
-  DeclareCastMethod(AccelerationStructureNV);
 #undef DeclareCastMethod
 
   bool operator==(const Type& other) const;
@@ -494,7 +491,6 @@ class Pointer : public Type {
 class Function : public Type {
  public:
   Function(Type* ret_type, const std::vector<const Type*>& params);
-  Function(Type* ret_type, std::vector<const Type*>& params);
   Function(const Function&) = default;
 
   std::string str() const override;
@@ -598,7 +594,6 @@ DefineParameterlessType(ReserveId, reserve_id);
 DefineParameterlessType(Queue, queue);
 DefineParameterlessType(PipeStorage, pipe_storage);
 DefineParameterlessType(NamedBarrier, named_barrier);
-DefineParameterlessType(AccelerationStructureNV, accelerationStructureNV);
 #undef DefineParameterlessType
 
 }  // namespace analysis

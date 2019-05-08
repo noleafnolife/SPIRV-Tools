@@ -21,8 +21,8 @@ set SRC=%cd%\github\SPIRV-Tools
 set BUILD_TYPE=%1
 set VS_VERSION=%2
 
-:: Force usage of python 3.6
-set PATH=C:\python36;%PATH%
+:: Force usage of python 2.7 rather than 3.6
+set PATH=C:\python27;%PATH%
 
 cd %SRC%
 git clone --depth=1 https://github.com/KhronosGroup/SPIRV-Headers external/spirv-headers
@@ -58,45 +58,33 @@ if "%KOKORO_GITHUB_COMMIT%." == "." (
   set BUILD_SHA=%KOKORO_GITHUB_COMMIT%
 )
 
-set CMAKE_FLAGS=-DCMAKE_INSTALL_PREFIX=%KOKORO_ARTIFACTS_DIR%\install -GNinja -DSPIRV_BUILD_COMPRESSION=ON -DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DRE2_BUILD_TESTING=OFF -DCMAKE_C_COMPILER=cl.exe -DCMAKE_CXX_COMPILER=cl.exe
-
 :: Skip building tests for VS2013
 if %VS_VERSION% == 2013 (
-  set CMAKE_FLAGS=%CMAKE_FLAGS% -DSPIRV_SKIP_TESTS=ON
+  cmake -GNinja -DSPIRV_SKIP_TESTS=ON -DSPIRV_BUILD_COMPRESSION=ON -DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DCMAKE_INSTALL_PREFIX=install -DRE2_BUILD_TESTING=OFF -DCMAKE_C_COMPILER=cl.exe -DCMAKE_CXX_COMPILER=cl.exe ..
+) else (
+  cmake -GNinja -DSPIRV_BUILD_COMPRESSION=ON -DCMAKE_BUILD_TYPE=%BUILD_TYPE% -DCMAKE_INSTALL_PREFIX=install -DRE2_BUILD_TESTING=OFF -DCMAKE_C_COMPILER=cl.exe -DCMAKE_CXX_COMPILER=cl.exe ..
 )
 
-cmake %CMAKE_FLAGS% ..
-
-if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
+if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 
 echo "Build everything... %DATE% %TIME%"
 ninja
-if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
+if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
 echo "Build Completed %DATE% %TIME%"
-
-:: This lets us use !ERRORLEVEL! inside an IF ... () and get the actual error at that point.
-setlocal ENABLEDELAYEDEXPANSION
 
 :: ################################################
 :: Run the tests (We no longer run tests on VS2013)
 :: ################################################
-echo "Running Tests... %DATE% %TIME%"
-if %VS_VERSION% NEQ 2013 (
+if NOT %VS_VERSION% == 2013 (
+  echo "Running Tests... %DATE% %TIME%"
   ctest -C %BUILD_TYPE% --output-on-failure --timeout 300
-  if !ERRORLEVEL! NEQ 0 exit /b !ERRORLEVEL!
+  if %ERRORLEVEL% GEQ 1 exit /b %ERRORLEVEL%
+  echo "Tests Completed %DATE% %TIME%"
 )
-echo "Tests Completed %DATE% %TIME%"
-
-:: ################################################
-:: Install and package.
-:: ################################################
-ninja install
-cd %KOKORO_ARTIFACTS_DIR%
-zip -r install.zip install
 
 :: Clean up some directories.
 rm -rf %SRC%\build
 rm -rf %SRC%\external
 
-exit /b 0
+exit /b %ERRORLEVEL%
 

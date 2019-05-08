@@ -44,8 +44,7 @@ class LocalAccessChainConvertPass : public MemPass {
   Status Process() override;
 
   IRContext::Analysis GetPreservedAnalyses() override {
-    return IRContext::kAnalysisDefUse | IRContext::kAnalysisConstants |
-           IRContext::kAnalysisTypes;
+    return IRContext::kAnalysisDefUse;
   }
 
   using ProcessFunction = std::function<bool(Function*)>;

@@ -63,7 +63,7 @@ spv_result_t UpdateIdUse(ValidationState_t& _, const Instruction* inst);
 /// @param[in] _ the validation state of the module
 ///
 /// @return SPV_SUCCESS if no errors are found. SPV_ERROR_INVALID_ID otherwise
-spv_result_t CheckIdDefinitionDominateUse(ValidationState_t& _);
+spv_result_t CheckIdDefinitionDominateUse(const ValidationState_t& _);
 
 /// @brief This function checks for preconditions involving the adjacent
 /// instructions.
@@ -75,7 +75,7 @@ spv_result_t CheckIdDefinitionDominateUse(ValidationState_t& _);
 /// @param[in] _ the validation state of the module
 ///
 /// @return SPV_SUCCESS if no errors are found. SPV_ERROR_INVALID_DATA otherwise
-spv_result_t ValidateAdjacency(ValidationState_t& _);
+spv_result_t ValidateAdjacency(ValidationState_t& _, size_t idx);
 
 /// @brief Validates static uses of input and output variables
 ///
@@ -91,7 +91,8 @@ spv_result_t ValidateInterfaces(ValidationState_t& _);
 ///
 /// @param[in] _ the validation state of the module
 /// @return SPV_SUCCESS if no errors are found.
-spv_result_t MemoryPass(ValidationState_t& _, const Instruction* inst);
+spv_result_t ValidateMemoryInstructions(ValidationState_t& _,
+                                        const Instruction* inst);
 
 /// @brief Updates the immediate dominator for each of the block edges
 ///
@@ -131,12 +132,11 @@ spv_result_t DataRulesPass(ValidationState_t& _, const Instruction* inst);
 /// Performs instruction validation.
 spv_result_t InstructionPass(ValidationState_t& _, const Instruction* inst);
 
-/// Performs decoration validation.  Assumes each decoration on a group
-/// has been propagated down to the group members.
+/// Performs decoration validation.
 spv_result_t ValidateDecorations(ValidationState_t& _);
 
 /// Performs validation of built-in variables.
-spv_result_t ValidateBuiltIns(ValidationState_t& _);
+spv_result_t ValidateBuiltIns(const ValidationState_t& _);
 
 /// Validates type instructions.
 spv_result_t TypePass(ValidationState_t& _, const Instruction* inst);
@@ -174,8 +174,8 @@ spv_result_t BarriersPass(ValidationState_t& _, const Instruction* inst);
 /// Validates correctness of literal numbers.
 spv_result_t LiteralsPass(ValidationState_t& _, const Instruction* inst);
 
-/// Validates correctness of extension instructions.
-spv_result_t ExtensionPass(ValidationState_t& _, const Instruction* inst);
+/// Validates correctness of ExtInst instructions.
+spv_result_t ExtInstPass(ValidationState_t& _, const Instruction* inst);
 
 /// Validates correctness of annotation instructions.
 spv_result_t AnnotationPass(ValidationState_t& _, const Instruction* inst);
@@ -204,6 +204,19 @@ spv_result_t FunctionPass(ValidationState_t& _, const Instruction* inst);
 /// Verifies execution models are allowed for all functionality they contain.
 spv_result_t ValidateExecutionLimitations(ValidationState_t& _,
                                           const Instruction* inst);
+
+/// @brief Validate the ID usage of the instruction stream
+///
+/// @param[in] pInsts stream of instructions
+/// @param[in] instCount number of instructions
+/// @param[in] usedefs use-def info from module parsing
+/// @param[in,out] position current position in the stream
+///
+/// @return result code
+spv_result_t spvValidateInstructionIDs(const spv_instruction_t* pInsts,
+                                       const uint64_t instCount,
+                                       const ValidationState_t& state,
+                                       spv_position position);
 
 /// @brief Validate the ID's within a SPIR-V binary
 ///

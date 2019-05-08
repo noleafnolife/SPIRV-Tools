@@ -52,8 +52,7 @@ class ScalarReplacementPass : public Pass {
     return IRContext::kAnalysisDefUse |
            IRContext::kAnalysisInstrToBlockMapping |
            IRContext::kAnalysisDecorations | IRContext::kAnalysisCombinators |
-           IRContext::kAnalysisCFG | IRContext::kAnalysisNameMap |
-           IRContext::kAnalysisConstants | IRContext::kAnalysisTypes;
+           IRContext::kAnalysisCFG | IRContext::kAnalysisNameMap;
   }
 
  private:
@@ -157,23 +156,18 @@ class ScalarReplacementPass : public Pass {
   // Returns the value of an OpConstant of integer type.
   //
   // |constant| must use two or fewer words to generate the value.
-  uint64_t GetConstantInteger(const Instruction* constant) const;
+  size_t GetConstantInteger(const Instruction* constant) const;
 
   // Returns the integer literal for |op|.
-  uint64_t GetIntegerLiteral(const Operand& op) const;
+  size_t GetIntegerLiteral(const Operand& op) const;
 
   // Returns the array length for |arrayInst|.
-  uint64_t GetArrayLength(const Instruction* arrayInst) const;
+  size_t GetArrayLength(const Instruction* arrayInst) const;
 
   // Returns the number of elements in |type|.
   //
   // |type| must be a vector or matrix type.
-  uint64_t GetNumElements(const Instruction* type) const;
-
-  // Returns true if |id| is a specialization constant.
-  //
-  // |id| must be registered definition.
-  bool IsSpecConstant(uint32_t id) const;
+  size_t GetNumElements(const Instruction* type) const;
 
   // Returns an id for a pointer to |id|.
   uint32_t GetOrCreatePointerType(uint32_t id);
@@ -228,7 +222,7 @@ class ScalarReplacementPass : public Pass {
   // Limit on the number of members in an object that will be replaced.
   // 0 means there is no limit.
   uint32_t max_num_elements_;
-  bool IsLargerThanSizeLimit(uint64_t length) const;
+  bool IsLargerThanSizeLimit(size_t length) const;
   char name_[55];
 };
 

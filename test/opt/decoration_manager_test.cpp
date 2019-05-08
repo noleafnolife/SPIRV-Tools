@@ -422,7 +422,6 @@ OpGroupDecorate %2 %1 %3
 OpCapability Linkage
 OpMemoryModel Logical GLSL450
 OpDecorate %1 Constant
-%2 = OpDecorationGroup
 %4 = OpTypeInt 32 0
 %1 = OpVariable %4 Uniform
 %3 = OpVariable %4 Uniform
@@ -709,8 +708,8 @@ OpDecorate %1 Aliased
   EXPECT_THAT(GetErrorMessage(), "");
 
   std::string expected_decorations =
-      R"(OpDecorateString %5 UserSemantic "blah"
-OpDecorateId %5 CounterBuffer %2
+      R"(OpDecorateStringGOOGLE %5 HlslSemanticGOOGLE "blah"
+OpDecorateId %5 HlslCounterBufferGOOGLE %2
 OpDecorate %5 Aliased
 )";
   EXPECT_THAT(ToText(decorations), expected_decorations);
@@ -720,11 +719,11 @@ OpCapability Linkage
 OpExtension "SPV_GOOGLE_hlsl_functionality1"
 OpExtension "SPV_GOOGLE_decorate_string"
 OpMemoryModel Logical GLSL450
-OpDecorateString %1 UserSemantic "blah"
-OpDecorateId %1 CounterBuffer %2
+OpDecorateStringGOOGLE %1 HlslSemanticGOOGLE "blah"
+OpDecorateId %1 HlslCounterBufferGOOGLE %2
 OpDecorate %1 Aliased
-OpDecorateString %5 UserSemantic "blah"
-OpDecorateId %5 CounterBuffer %2
+OpDecorateStringGOOGLE %5 HlslSemanticGOOGLE "blah"
+OpDecorateId %5 HlslCounterBufferGOOGLE %2
 OpDecorate %5 Aliased
 %3 = OpTypeInt 32 0
 %4 = OpTypePointer Uniform %3

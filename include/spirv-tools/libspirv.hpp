@@ -82,20 +82,12 @@ class ValidatorOptions {
   }
 
   // Enables VK_KHR_relaxed_block_layout when validating standard
-  // uniform/storage buffer/push-constant layout.  If true, disables
-  // scalar block layout rules.
+  // uniform/storage buffer layout.
   void SetRelaxBlockLayout(bool val) {
     spvValidatorOptionsSetRelaxBlockLayout(options_, val);
   }
 
-  // Enables VK_EXT_scalar_block_layout when validating standard
-  // uniform/storage buffer/push-constant layout.  If true, disables
-  // relaxed block layout rules.
-  void SetScalarBlockLayout(bool val) {
-    spvValidatorOptionsSetScalarBlockLayout(options_, val);
-  }
-
-  // Skips validating standard uniform/storage buffer/push-constant layout.
+  // Skips validating standard uniform/storage buffer layout.
   void SetSkipBlockLayout(bool val) {
     spvValidatorOptionsSetSkipBlockLayout(options_, val);
   }
@@ -112,62 +104,6 @@ class ValidatorOptions {
 
  private:
   spv_validator_options options_;
-};
-
-// A C++ wrapper around an optimization options object.
-class OptimizerOptions {
- public:
-  OptimizerOptions() : options_(spvOptimizerOptionsCreate()) {}
-  ~OptimizerOptions() { spvOptimizerOptionsDestroy(options_); }
-
-  // Allow implicit conversion to the underlying object.
-  operator spv_optimizer_options() const { return options_; }
-
-  // Records whether or not the optimizer should run the validator before
-  // optimizing.  If |run| is true, the validator will be run.
-  void set_run_validator(bool run) {
-    spvOptimizerOptionsSetRunValidator(options_, run);
-  }
-
-  // Records the validator options that should be passed to the validator if it
-  // is run.
-  void set_validator_options(const ValidatorOptions& val_options) {
-    spvOptimizerOptionsSetValidatorOptions(options_, val_options);
-  }
-
-  // Records the maximum possible value for the id bound.
-  void set_max_id_bound(uint32_t new_bound) {
-    spvOptimizerOptionsSetMaxIdBound(options_, new_bound);
-  }
-
- private:
-  spv_optimizer_options options_;
-};
-
-// A C++ wrapper around a reducer options object.
-class ReducerOptions {
- public:
-  ReducerOptions() : options_(spvReducerOptionsCreate()) {}
-  ~ReducerOptions() { spvReducerOptionsDestroy(options_); }
-
-  // Allow implicit conversion to the underlying object.
-  operator spv_reducer_options() const {  // NOLINT(google-explicit-constructor)
-    return options_;
-  }
-
-  // See spvReducerOptionsSetStepLimit.
-  void set_step_limit(uint32_t step_limit) {
-    spvReducerOptionsSetStepLimit(options_, step_limit);
-  }
-
-  // See spvReducerOptionsSetFailOnValidationError.
-  void set_fail_on_validation_error(bool fail_on_validation_error) {
-    spvReducerOptionsSetFailOnValidationError(options_,
-                                              fail_on_validation_error);
-  }
-
- private:
-  spv_reducer_options options_;
 };
 
 // C++ interface for SPIRV-Tools functionalities. It wraps the context
@@ -237,10 +173,7 @@ class SpirvTools {
   bool Validate(const uint32_t* binary, size_t binary_size) const;
   // Like the previous overload, but takes an options object.
   bool Validate(const uint32_t* binary, size_t binary_size,
-                spv_validator_options options) const;
-
-  // Was this object successfully constructed.
-  bool IsValid() const;
+                const ValidatorOptions& options) const;
 
  private:
   struct Impl;  // Opaque struct for holding the data fields used by this class.

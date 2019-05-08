@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/bin/bash
 # Copyright (c) 2016 The Khronos Group Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");

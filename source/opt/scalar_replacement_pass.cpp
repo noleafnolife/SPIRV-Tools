@@ -225,12 +225,12 @@ bool ScalarReplacementPass::ReplaceAccessChain(
   // indexes) or a direct use of the replacement variable.
   uint32_t indexId = chain->GetSingleWordInOperand(1u);
   const Instruction* index = get_def_use_mgr()->GetDef(indexId);
-  uint64_t indexValue = GetConstantInteger(index);
+  size_t indexValue = GetConstantInteger(index);
   if (indexValue > replacements.size()) {
     // Out of bounds access, this is illegal IR.
     return false;
   } else {
-    const Instruction* var = replacements[static_cast<size_t>(indexValue)];
+    const Instruction* var = replacements[indexValue];
     if (chain->NumInOperands() > 2) {
       // Replace input access chain with another access chain.
       BasicBlock::iterator chainIter(chain);
@@ -363,7 +363,7 @@ uint32_t ScalarReplacementPass::GetOrCreatePointerType(uint32_t id) {
       context()->get_type_mgr()->GetTypeAndPointerType(id,
                                                        SpvStorageClassFunction);
   uint32_t ptrId = 0;
-  if (pointeeTy->IsUniqueType()) {
+  if (id == context()->get_type_mgr()->GetId(pointeeTy)) {
     // Non-ambiguous type, just ask the type manager for an id.
     ptrId = context()->get_type_mgr()->GetTypeInstruction(pointerTy.get());
     pointee_to_pointer_[id] = ptrId;
@@ -457,16 +457,16 @@ void ScalarReplacementPass::GetOrCreateInitialValue(Instruction* source,
   }
 }
 
-uint64_t ScalarReplacementPass::GetIntegerLiteral(const Operand& op) const {
+size_t ScalarReplacementPass::GetIntegerLiteral(const Operand& op) const {
   assert(op.words.size() <= 2);
-  uint64_t len = 0;
+  size_t len = 0;
   for (uint32_t i = 0; i != op.words.size(); ++i) {
     len |= (op.words[i] << (32 * i));
   }
   return len;
 }
 
-uint64_t ScalarReplacementPass::GetConstantInteger(
+size_t ScalarReplacementPass::GetConstantInteger(
     const Instruction* constant) const {
   assert(get_def_use_mgr()->GetDef(constant->type_id())->opcode() ==
          SpvOpTypeInt);
@@ -480,7 +480,7 @@ uint64_t ScalarReplacementPass::GetConstantInteger(
   return GetIntegerLiteral(op);
 }
 
-uint64_t ScalarReplacementPass::GetArrayLength(
+size_t ScalarReplacementPass::GetArrayLength(
     const Instruction* arrayType) const {
   assert(arrayType->opcode() == SpvOpTypeArray);
   const Instruction* length =
@@ -488,22 +488,16 @@ uint64_t ScalarReplacementPass::GetArrayLength(
   return GetConstantInteger(length);
 }
 
-uint64_t ScalarReplacementPass::GetNumElements(const Instruction* type) const {
+size_t ScalarReplacementPass::GetNumElements(const Instruction* type) const {
   assert(type->opcode() == SpvOpTypeVector ||
          type->opcode() == SpvOpTypeMatrix);
   const Operand& op = type->GetInOperand(1u);
   assert(op.words.size() <= 2);
-  uint64_t len = 0;
-  for (size_t i = 0; i != op.words.size(); ++i) {
-    len |= (static_cast<uint64_t>(op.words[i]) << (32ull * i));
+  size_t len = 0;
+  for (uint32_t i = 0; i != op.words.size(); ++i) {
+    len |= (op.words[i] << (32 * i));
   }
   return len;
-}
-
-bool ScalarReplacementPass::IsSpecConstant(uint32_t id) const {
-  const Instruction* inst = get_def_use_mgr()->GetDef(id);
-  assert(inst);
-  return spvOpcodeIsSpecConstant(inst->opcode());
 }
 
 Instruction* ScalarReplacementPass::GetStorageType(
@@ -542,12 +536,7 @@ bool ScalarReplacementPass::CheckType(const Instruction* typeInst) const {
         return false;
       return true;
     case SpvOpTypeArray:
-      if (IsSpecConstant(typeInst->GetSingleWordInOperand(1u))) {
-        return false;
-      }
-      if (IsLargerThanSizeLimit(GetArrayLength(typeInst))) {
-        return false;
-      }
+      if (IsLargerThanSizeLimit(GetArrayLength(typeInst))) return false;
       return true;
       // TODO(alanbaker): Develop some heuristics for when this should be
       // re-enabled.
@@ -638,8 +627,8 @@ bool ScalarReplacementPass::CheckUses(const Instruction* inst,
           switch (user->opcode()) {
             case SpvOpAccessChain:
             case SpvOpInBoundsAccessChain:
-              if (index == 2u && user->NumInOperands() > 1) {
-                uint32_t id = user->GetSingleWordInOperand(1u);
+              if (index == 2u) {
+                uint32_t id = user->GetSingleWordOperand(3u);
                 const Instruction* opInst = get_def_use_mgr()->GetDef(id);
                 if (!IsCompileTimeConstantInst(opInst->opcode())) {
                   ok = false;
@@ -717,7 +706,7 @@ bool ScalarReplacementPass::CheckStore(const Instruction* inst,
     return false;
   return true;
 }
-bool ScalarReplacementPass::IsLargerThanSizeLimit(uint64_t length) const {
+bool ScalarReplacementPass::IsLargerThanSizeLimit(size_t length) const {
   if (max_num_elements_ == 0) {
     return false;
   }
@@ -751,10 +740,8 @@ ScalarReplacementPass::GetUsedComponents(Instruction* inst) {
           return false;
         }
       }
-      case SpvOpName:
-      case SpvOpMemberName:
       case SpvOpStore:
-        // No components are used.
+        // No components are used.  Things are just stored to.
         return true;
       case SpvOpAccessChain:
       case SpvOpInBoundsAccessChain: {
@@ -782,6 +769,16 @@ ScalarReplacementPass::GetUsedComponents(Instruction* inst) {
           result.reset(nullptr);
           return false;
         }
+      }
+      case SpvOpCopyObject: {
+        // Follow the copy to see which components are used.
+        auto t = GetUsedComponents(use);
+        if (!t) {
+          result.reset(nullptr);
+          return false;
+        }
+        result->insert(t->begin(), t->end());
+        return true;
       }
       default:
         // We do not know what is happening.  Have to assume the worst.

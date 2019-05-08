@@ -88,7 +88,6 @@ TestMultipleInstancesOfTheSameType(Pipe, SpvAccessQualifierReadWrite);
 TestMultipleInstancesOfTheSameType(ForwardPointer, 10, SpvStorageClassUniform);
 TestMultipleInstancesOfTheSameType(PipeStorage);
 TestMultipleInstancesOfTheSameType(NamedBarrier);
-TestMultipleInstancesOfTheSameType(AccelerationStructureNV);
 #undef TestMultipleInstanceOfTheSameType
 
 std::vector<std::unique_ptr<Type>> GenerateAllTypes() {

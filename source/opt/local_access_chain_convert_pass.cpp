@@ -264,12 +264,6 @@ void LocalAccessChainConvertPass::Initialize() {
 }
 
 bool LocalAccessChainConvertPass::AllExtensionsSupported() const {
-  // This capability can now exist without the extension, so we have to check
-  // for the capability.  This pass is only looking at function scope symbols,
-  // so we do not care if there are variable pointers on storage buffers.
-  if (context()->get_feature_mgr()->HasCapability(
-          SpvCapabilityVariablePointers))
-    return false;
   // If any extension not in whitelist, return false
   for (auto& ei : get_module()->extensions()) {
     const char* extName =
@@ -298,7 +292,7 @@ Pass::Status LocalAccessChainConvertPass::ProcessImpl() {
   ProcessFunction pfn = [this](Function* fp) {
     return ConvertLocalAccessChains(fp);
   };
-  bool modified = context()->ProcessEntryPointCallTree(pfn);
+  bool modified = ProcessEntryPointCallTree(pfn, get_module());
   return modified ? Status::SuccessWithChange : Status::SuccessWithoutChange;
 }
 
@@ -345,13 +339,6 @@ void LocalAccessChainConvertPass::InitExtensions() {
       "SPV_GOOGLE_hlsl_functionality1",
       "SPV_NV_shader_subgroup_partitioned",
       "SPV_EXT_descriptor_indexing",
-      "SPV_NV_fragment_shader_barycentric",
-      "SPV_NV_compute_shader_derivatives",
-      "SPV_NV_shader_image_footprint",
-      "SPV_NV_shading_rate",
-      "SPV_NV_mesh_shader",
-      "SPV_NV_ray_tracing",
-      "SPV_EXT_fragment_invocation_density",
   });
 }
 

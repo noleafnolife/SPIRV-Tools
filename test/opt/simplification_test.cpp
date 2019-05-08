@@ -25,6 +25,7 @@ namespace {
 
 using SimplificationTest = PassTest<::testing::Test>;
 
+#ifdef SPIRV_EFFCEE
 TEST_F(SimplificationTest, StraightLineTest) {
   // Testing that folding rules are combined in simple straight line code.
   const std::string text = R"(OpCapability Shader
@@ -201,6 +202,8 @@ TEST_F(SimplificationTest, ThroughLoops) {
 
   SinglePassRunAndMatch<SimplificationPass>(text, false);
 }
+
+#endif
 
 }  // namespace
 }  // namespace opt

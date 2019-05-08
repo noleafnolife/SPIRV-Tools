@@ -29,6 +29,7 @@ using ::testing::HasSubstr;
 using ::testing::MatchesRegex;
 using PrivateToLocalTest = PassTest<::testing::Test>;
 
+#ifdef SPIRV_EFFCEE
 TEST_F(PrivateToLocalTest, ChangeToLocal) {
   // Change the private variable to a local, and change the types accordingly.
   const std::string text = R"(
@@ -307,6 +308,8 @@ TEST_F(PrivateToLocalTest, CreatePointerToAmbiguousStruct2) {
   )";
   SinglePassRunAndMatch<PrivateToLocalPass>(text, false);
 }
+
+#endif
 
 }  // namespace
 }  // namespace opt

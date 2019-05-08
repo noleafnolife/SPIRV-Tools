@@ -123,7 +123,6 @@ std::unique_ptr<Type> Type::Clone() const {
     DeclareKindCase(ForwardPointer);
     DeclareKindCase(PipeStorage);
     DeclareKindCase(NamedBarrier);
-    DeclareKindCase(AccelerationStructureNV);
 #undef DeclareKindCase
     default:
       assert(false && "Unhandled type");
@@ -167,7 +166,6 @@ bool Type::operator==(const Type& other) const {
     DeclareKindCase(ForwardPointer);
     DeclareKindCase(PipeStorage);
     DeclareKindCase(NamedBarrier);
-    DeclareKindCase(AccelerationStructureNV);
 #undef DeclareKindCase
     default:
       assert(false && "Unhandled type");
@@ -216,7 +214,6 @@ void Type::GetHashWords(std::vector<uint32_t>* words,
     DeclareKindCase(ForwardPointer);
     DeclareKindCase(PipeStorage);
     DeclareKindCase(NamedBarrier);
-    DeclareKindCase(AccelerationStructureNV);
 #undef DeclareKindCase
     default:
       assert(false && "Unhandled type");
@@ -551,10 +548,12 @@ void Pointer::GetExtraHashWords(std::vector<uint32_t>* words,
 void Pointer::SetPointeeType(const Type* type) { pointee_type_ = type; }
 
 Function::Function(Type* ret_type, const std::vector<const Type*>& params)
-    : Type(kFunction), return_type_(ret_type), param_types_(params) {}
-
-Function::Function(Type* ret_type, std::vector<const Type*>& params)
-    : Type(kFunction), return_type_(ret_type), param_types_(params) {}
+    : Type(kFunction), return_type_(ret_type), param_types_(params) {
+  for (auto* t : params) {
+    (void)t;
+    assert(!t->AsVoid());
+  }
+}
 
 bool Function::IsSameImpl(const Type* that, IsSameCache* seen) const {
   const Function* ft = that->AsFunction();
